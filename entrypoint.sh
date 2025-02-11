@@ -3,8 +3,9 @@
 set -e
 
 if [ -n "$REUID" ] && [ -n "$REGID" ]; then
-  groupadd --gid "$REGID" vivado
-  useradd --shell /bin/bash --uid "$REUID" --gid vivado --create-home vivado
+  userdel $REUID || true
+  groupadd -f --gid "$REGID" vivado || true
+  useradd --shell /bin/bash --uid "$REUID" --gid vivado --create-home vivado || true
   if tty="$(tty)"; then
     chown vivado "$tty"
   fi
