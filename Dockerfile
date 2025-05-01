@@ -1,9 +1,13 @@
+# syntax=docker/dockerfile:1
+
 FROM ubuntu:jammy AS base
 RUN \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         expect file libgtk2.0-0 libncurses5 libswt-glx-gtk-4-jni libtinfo5 \
-        locales python3 x11-utils xz-utils xvfb && \
+        locales python3 x11-utils xz-utils xvfb \
+        git gcc g++ make \
+        && \
     rm -rf /var/lib/apt/lists/* && \
     sed -i 's/^#\s*\(en_US.UTF-8\)/\1/' /etc/locale.gen && \
     dpkg-reconfigure --frontend noninteractive locales
@@ -32,9 +36,10 @@ COPY auth_token_gen.exp /
 COPY $INSTALLER_CONFIG /install_config.txt
 COPY --chmod=755 $INSTALLER_BIN /installer.bin
 RUN --mount=type=secret,target=/secret.txt,id=secret,required=true \
+    --mount=type=cache,target=/opt/Xilinx/Downloads,id=xilinx_downloads \
     expect -f /auth_token_gen.exp /installer/xsetup /secret.txt && \
     /installer/xsetup -b Install -a "$INSTALLER_AGREED_EULA" -c /install_config.txt && \
-    rm -rf /opt/Xilinx/.xinstall /opt/Xilinx/Downloads /opt/Xilinx/xic
+    rm -rf /opt/Xilinx/.xinstall /opt/Xilinx/xic
 
 
 FROM base
