@@ -30,7 +30,6 @@ ARG INSTALLER_CONFIG=install_config.txt
 ARG INSTALLER_AGREED_EULA=XilinxEULA,3rdPartyEULA
 COPY auth_token_gen.exp /
 COPY $INSTALLER_CONFIG /install_config.txt
-COPY --chmod=755 $INSTALLER_BIN /installer.bin
 RUN --mount=type=secret,target=/secret.txt,id=secret,required=true \
     expect -f /auth_token_gen.exp /installer/xsetup /secret.txt && \
     /installer/xsetup -b Install -a "$INSTALLER_AGREED_EULA" -c /install_config.txt && \
