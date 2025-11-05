@@ -2,7 +2,7 @@
 
 cd $(dirname "$0")
 
-IMAGE=${IMAGE:-vivado:v2024.1-asz}
+IMAGE=${IMAGE:-vivado:v2025.1}
 
 CMD=('vivado')
 
@@ -21,5 +21,5 @@ docker run \
   -v ~/dev/vivado:/home/vivado/work \
   -w /home/vivado \
   "$IMAGE" \
-  /bin/bash -c '. /opt/Xilinx/Vivado/2024.1/settings64.sh && "$@"' dummy "${CMD[@]}"
+  /bin/bash -c '. /opt/Xilinx/2025.1/Vivado/settings64.sh && "$@"' dummy "${CMD[@]}"
 
