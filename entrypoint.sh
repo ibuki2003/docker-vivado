@@ -11,7 +11,11 @@ if [ -n "$REUID" ] && [ -n "$REGID" ]; then
   fi
   unset REUID REGID
   export HOME=~vivado
-  exec setpriv --reuid=vivado --regid=vivado --init-groups "$@"
+  if [ -n "$NO_RUNAS" ]; then
+    exec "$@"
+  else
+    exec setpriv --reuid=vivado --regid=vivado --init-groups "$@"
+  fi
 else
   exec "$@"
 fi

@@ -46,4 +46,11 @@ FROM base
 COPY --from=do-install /opt/Xilinx /opt/Xilinx
 COPY --chmod=755 entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
+RUN \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ssh sudo \
+        && \
+    rm -rf /var/lib/apt/lists/*
+
 CMD ["/bin/bash"]
