@@ -1,0 +1,67 @@
+services:
+  vivado:
+    image: vivado:v2025.1
+    profiles: [local]
+
+    #tty: true
+    #stdin_open: true
+    working_dir: /home/vivado
+    environment:
+      REUID: "${UID:-1000}"
+      REGID: "${GID:-1000}"
+      _JAVA_AWT_WM_NONREPARENTING: "1"
+      LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
+      DISPLAY: "${DISPLAY}"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ./home:/home/vivado
+      - work:/home/vivado/work
+    #entrypoint: ["/bin/bash", "-lc", ". /opt/Xilinx/2025.1/Vivado/settings64.sh && exec \"$@\""]
+    # command: ["bash"]
+    #command: ["vivado"]
+    command: ["/bin/bash", "-lc", ". /opt/Xilinx/2025.1/Vivado/settings64.sh && vivado"]
+
+  vivado-remote:
+    image: vivado:v2025.1
+    profiles: [remote]
+
+    ports:
+      - "2222:2222"
+
+    #working_dir: /home/vivado
+    environment:
+      REUID: "${UID:-1000}"
+      REGID: "${GID:-1000}"
+      _JAVA_AWT_WM_NONREPARENTING: "1"
+      LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
+    volumes:
+      - ./home:/home/vivado
+      - work:/home/vivado/work
+
+      - ./sshd_config:/sshd_config:ro
+    command: >
+      sh -c "
+        mkdir -p /home/vivado/.ssh/etc/ssh;
+        [ ! -e /home/vivado/.ssh/ssh_host_rsa_key ] && ssh-keygen -t rsa -N '' -f /home/vivado/.ssh/ssh_host_rsa_key;
+        /usr/sbin/sshd -D -f /sshd_config
+      "
+
+  nfs-server:
+    network_mode: host
+    image: erichough/nfs-server
+    cap_add:
+      - SYS_ADMIN
+    environment:
+      - NFS_EXPORT_0=/exports 100.64.0.0/10(rw,sync,no_subtree_check,no_root_squash,fsid=0)
+    volumes:
+      - ${WORK_DIR:-./work}:/exports
+    #ports:
+    #  - "2049:2049"
+
+volumes:
+  work:
+    driver: local
+    driver_opts:
+      type: ${PROJECTS_VOL_TYPE:-none}
+      o: ${PROJECTS_VOL_OPTS:-bind}
+      device: ${PROJECTS_VOL_DEVICE:-${WORK_DIR:-./projects}}

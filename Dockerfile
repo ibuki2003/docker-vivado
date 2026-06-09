@@ -14,7 +14,7 @@ RUN \
 
 
 FROM base AS installer
-ARG INSTALLER_BIN=FPGAs_AdaptiveSoCs_Unified_2024.1_0522_2023_Lin64.bin
+ARG INSTALLER_BIN=FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145_Lin64.bin
 COPY --chmod=755 $INSTALLER_BIN /installer.bin
 RUN /installer.bin --keep --noexec --target /installer
 
