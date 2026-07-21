@@ -2,6 +2,7 @@ services:
   vivado:
     image: vivado:v2025.1
     profiles: [local]
+    network_mode: host
 
     #tty: true
     #stdin_open: true
@@ -16,17 +17,21 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ./home:/home/vivado
       - work:/home/vivado/work
-    #entrypoint: ["/bin/bash", "-lc", ". /opt/Xilinx/2025.1/Vivado/settings64.sh && exec \"$@\""]
-    # command: ["bash"]
-    #command: ["vivado"]
-    command: ["/bin/bash", "-lc", ". /opt/Xilinx/2025.1/Vivado/settings64.sh && vivado"]
+    # unset entrypoint
+    entrypoint: []
+    command:
+      - "/bin/bash"
+      - "-lc"
+      - |
+        echo "dash dash/sh boolean false" | debconf-set-selections
+        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
+        /entrypoint.sh /bin/bash -c ". /opt/Xilinx/2025.1/Vivado/settings64.sh && vivado"
 
   vivado-remote:
     image: vivado:v2025.1
     profiles: [remote]
 
-    ports:
-      - "2222:2222"
+    network_mode: host
 
     #working_dir: /home/vivado
     environment:
