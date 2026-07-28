@@ -40,8 +40,8 @@ services:
       _JAVA_AWT_WM_NONREPARENTING: "1"
       LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
     volumes:
-      - ./home:/home/vivado
-      - work:/home/vivado/work
+      - &vivado-home-volume ./home:/home/vivado
+      - &vivado-work-volume work:/home/vivado/work
 
       - ./sshd_config:/sshd_config:ro
     command: >
@@ -50,6 +50,38 @@ services:
         [ ! -e /home/vivado/.ssh/ssh_host_rsa_key ] && ssh-keygen -t rsa -N '' -f /home/vivado/.ssh/ssh_host_rsa_key;
         /usr/sbin/sshd -D -f /sshd_config
       "
+
+  vivado-remote-gui:
+    extends:
+      service: vivado-remote
+    # `profiles` is otherwise appended to the inherited `remote` profile.
+    profiles: !override [remote-gui]
+    environment:
+      DISPLAY: "${DISPLAY}"
+    # Drop the inherited sshd_config mount, retaining the shared mounts.
+    volumes: !override
+      - *vivado-home-volume
+      - *vivado-work-volume
+      - type: bind
+        source: ${XAUTHORITY:-${HOME}/.Xauthority}
+        target: /tmp/.host.Xauthority
+        read_only: true
+        bind:
+          create_host_path: false
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        cookie="$$(xauth -f /tmp/.host.Xauthority nlist "$$DISPLAY")"
+        if [ -z "$$cookie" ]; then
+          echo "No X11 cookie found for DISPLAY=$$DISPLAY" >&2
+          exit 1
+        fi
+        printf '%s\n' "$$cookie" | sed -e 's/^..../ffff/' \
+          | xauth -f /tmp/.container.Xauthority nmerge -
+        export XAUTHORITY=/tmp/.container.Xauthority
+        . /opt/Xilinx/2025.1/Vivado/settings64.sh
+        exec vivado
 
   nfs-server:
     network_mode: host
