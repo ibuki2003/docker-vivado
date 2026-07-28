@@ -1,22 +1,32 @@
+x-vivado-environment: &vivado-environment
+  REUID: "${UID:-1000}"
+  REGID: "${GID:-1000}"
+  _JAVA_AWT_WM_NONREPARENTING: "1"
+  LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
+
+x-vivado-home-volume: &vivado-home-volume ./home:/home/vivado
+x-vivado-work-volume: &vivado-work-volume work:/home/vivado/work
+
+x-vivado: &vivado
+  image: vivado:v2025.1
+  network_mode: host
+  environment: *vivado-environment
+
 services:
   vivado:
-    image: vivado:v2025.1
+    <<: *vivado
     profiles: [local]
-    network_mode: host
 
     #tty: true
     #stdin_open: true
     working_dir: /home/vivado
     environment:
-      REUID: "${UID:-1000}"
-      REGID: "${GID:-1000}"
-      _JAVA_AWT_WM_NONREPARENTING: "1"
-      LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
+      <<: *vivado-environment
       DISPLAY: "${DISPLAY}"
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
-      - ./home:/home/vivado
-      - work:/home/vivado/work
+      - *vivado-home-volume
+      - *vivado-work-volume
     # unset entrypoint
     entrypoint: []
     command:
@@ -28,21 +38,11 @@ services:
         /entrypoint.sh /bin/bash -c ". /opt/Xilinx/2025.1/Vivado/settings64.sh && vivado"
 
   vivado-remote:
-    image: vivado:v2025.1
+    <<: *vivado
     profiles: [remote]
-
-    network_mode: host
-
-    #working_dir: /home/vivado
-    environment:
-      REUID: "${UID:-1000}"
-      REGID: "${GID:-1000}"
-      _JAVA_AWT_WM_NONREPARENTING: "1"
-      LD_PRELOAD: "/lib/x86_64-linux-gnu/libudev.so.1"
     volumes:
-      - &vivado-home-volume ./home:/home/vivado
-      - &vivado-work-volume work:/home/vivado/work
-
+      - *vivado-home-volume
+      - *vivado-work-volume
       - ./sshd_config:/sshd_config:ro
     command: >
       sh -c "
@@ -52,14 +52,12 @@ services:
       "
 
   vivado-remote-gui:
-    extends:
-      service: vivado-remote
-    # `profiles` is otherwise appended to the inherited `remote` profile.
-    profiles: !override [remote-gui]
+    <<: *vivado
+    profiles: [remote-gui]
     environment:
+      <<: *vivado-environment
       DISPLAY: "${DISPLAY}"
-    # Drop the inherited sshd_config mount, retaining the shared mounts.
-    volumes: !override
+    volumes:
       - *vivado-home-volume
       - *vivado-work-volume
       - type: bind
